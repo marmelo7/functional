@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>함수형 프로그래밍</title>
+    <script src="../섹션2.함수형으로 전환하기/_.js"></script>
+</head>
+
+<body>
+    <script>
+        var users = [
+            { id: 1, name: 'ID', age: 36 },
+            { id: 2, name: 'BJ', age: 32 },
+            { id: 3, name: 'JM', age: 32 },
+            { id: 4, name: 'PJ', age: 27 },
+            { id: 5, name: 'HA', age: 25 },
+            { id: 6, name: 'JE', age: 26 },
+            { id: 7, name: 'JI', age: 31 },
+            { id: 8, name: 'MP', age: 23 }
+        ];
+
+        // 1. 명령형 코드, map, filter
+        // -1. 30세 이상인 users를 거른다.
+        var temp_users = [];
+        for (var i = 0; i < users.length; i++) {
+            if (users[i].age >= 30) {
+                temp_users.push(users[i]);
+            }
+        }
+        console.log(temp_users);
+
+        // -2. 30세 이상인 users의 names를 수집한다.
+        var names = [];
+        for (var i = 0; i < temp_users.length; i++) {
+            names.push(temp_users[i].name);
+        }
+
+        console.log(names);
+
+        // -3. 30세 미만인 users를 거른다.
+        var temp_users = [];
+        for (var i = 0; i < users.length; i++) {
+            if (users[i].age < 30) {
+                temp_users.push(users[i]);
+            }
+        }
+        console.log(temp_users);
+
+        // -4. 30세 미만인 users의 ages를 수집한다.
+        var ages = [];
+        for (var i = 0; i < temp_users.length; i++) {
+            ages.push(temp_users[i].age);
+        }
+
+        console.log(ages);
+
+        // -5. _filter, _map으로 리팩토링
+        //_filter함수로 중복 제거
+        // function _filter(list, predi) {
+        //     var new_list = [];
+        //     for (var i = 0; i < list.length; i++) {
+        //         if (predi(list[i])) {
+        //             new_list.push(list[i]);
+        //         }
+        //     }
+        //     return new_list;
+        // }
+        var over_30 = _filter(users, function (user) { return user.age >= 30; })
+        console.log(over_30);
+        var under_30 = _filter(users, function (user) { return user.age < 30; })
+        console.log(under_30);
+
+
+        // console.log( _filter([1, 2, 3, 4], function(num){ return num%2; }) )
+        // console.log( _filter([1, 2, 3, 4], function(num){ return !(num%2); }) )
+
+        //_map함수로 나이와 이름 수집
+        // function _map(list, mapper) {
+        //     var new_list = [];
+        //     for (var i = 0; i < list.length; i++) {
+        //         new_list.push(mapper(list[i]));
+        //     }
+        //     return new_list;
+        // }
+
+        var names = _map(over_30, function (user) {
+            return user.name;
+        })
+
+        var ages = _map(under_30, function (user) {
+            return user.age;
+        })
+
+        console.log(ages);
+        console.log(
+            _map(
+                _filter(users, function (user) { return user.age >= 30; }),
+                function (user) { return user.name; }));
+        console.log(
+            _map(
+                _filter(users, function (user) { return user.age < 30; }),
+                function (user) { return user.age; }));
+
+        // 2. each 만들기
+        // -1. _each로 _map, _filter 중복 제거
+        function _filter(list, predi) {
+            var new_list = [];
+            _each(list, function (val) {
+                if (predi(val)) new_list.push(val);
+            });
+            return new_list;
+        }
+        function _map(list, mapper) {
+            var new_list = [];
+            _each(list, function (val) {
+                new_list.push(mapper(val));
+            });
+            return new_list;
+        }
+        // function _each(list, iter) {
+        //     for (var i = 0; i < list.length; i++) {
+        //         iter(list[i]);
+        //     }
+        //     return list;
+        // }
+        // -2. 외부 다형성
+        // --1. array_like, arguments, document.querySelectorAll
+        console.log(
+            [1, 2, 3, 4].map(function (val) {
+                return val * 2;
+            })
+        );
+        console.log(
+            [1, 2, 3, 4].filter(function (val) {
+                return val % 2;
+            })
+        );
+        console.log(_map(document.querySelectorAll('*'), function (node) {
+            return node.nodeName;
+        }))
+
+        // -3. 내부 다형성
+        // --1. predi, iter, mapper
+        console.clear();
+        // 3. 커링
+        // -1. _curry, _curryr
+        function _curry(fn) {
+            return function (a, b) {
+                return arguments.length == 2 ? fn(a, b) : function (b) { return fn(a, b); }
+            }
+        }
+        function _curryr(fn) {
+            return function (a, b) {
+                return arguments.length == 2 ? fn(a, b) : function (b) { return fn(b, a); }
+            }
+        }
+        // var add = function(a, b){
+        //     return a + b;
+        // }
+
+        var add = _curry(function (a, b) { return a + b; });
+
+
+        var add10 = add(10);
+        console.log(add10(5)); //10+5
+
+        console.log(add(5)(3));
+        console.log(add(5, 3));
+
+        var sub = _curryr(function (a, b) { return a - b; });
+
+        console.log(sub(10, 5));
+
+        var sub10 = sub(10);
+        console.log(sub10(5));
+
+        // -2. _get 만들어 좀 더 간단하게 하기
+        var _get = _curryr(function (obj, key) {
+            return obj == null ? undefined : obj[key];
+        });
+
+        console.log(
+            _map(
+                _filter(users, function (user) { return user.age >= 30; }),
+                _get('name')));
+        console.log(
+            _map(
+                _filter(users, function (user) { return user.age < 30; }),
+                _get('age')));
+
+
+        // var user1 = users[0];
+        // console.log( user1.name ); 
+        // console.log( _get(user1, 'name') ); 
+        // console.log( _get('name')(user1) ); 
+        console.clear();
+        // 4. _reduce 만들기
+        var slice = Array.prototype.slice;
+        function _rest(list, num) {
+            return slice.call(list, num || 1); //넘겨 준 값이 없으면 기본값 1
+        }
+
+        function _reduce(list, iter, memo) {
+            if (arguments.length == 2) {
+                memo = list[0];
+                list = _rest(list); //이렇게 _rest(slice)를 이용해 처리
+            }
+            _each(list, function (val) {
+                memo = iter(memo, val);
+            });
+            return memo;
+        }
+
+
+        // 5. 파이프라인 만들기
+        // -1. pipe
+        function _pipe() {
+            var fns = arguments;
+            return function (arg) {
+                return _reduce(fns, function (arg, fn) {
+                    return fn(arg);
+                }, arg);
+            }
+        }
+        var f1 = _pipe(
+            function (a) { return a + 1; },
+            function (a) { return a + 2; },
+            function (a) { return a * 2; });
+        console.log(f1(1));
+
+        // -2. _go
+        function _go(arg) {
+            var fns = _rest(arguments); //첫번째 값은 값으로 받은 인자이므로 제외
+            return _pipe.apply(null, fns)(arg);
+        }
+
+        _go(1,
+            function (a) { return a + 1; },
+            function (a) { return a + 2; },
+            function (a) { return a * 2; },
+            console.log);
+
+        // -3. users에 _go 적용
+        console.log(
+            _map(
+                _filter(users, function (user) { return user.age >= 30; }),
+                _get('name')));
+        console.log(
+            _map(
+                _filter(users, function (user) { return user.age < 30; }),
+                _get('age')));
+        _go(users,
+            function (users) {
+                return _filter(users, function (user) {
+                    return user.age >= 30;
+                });
+            },
+            function (users) {
+                return _map(users, _get('name'));
+            },
+            console.log
+        )
+        _go(users,
+            function (users) {
+                return _filter(users, function (user) {
+                    return user.age < 30;
+                });
+            },
+            function (users) {
+                return _map(users, _get('age'));
+            },
+            console.log
+        )
+        //이렇게 간결하게 작성 가능해짐
+        var _map = _curryr(_map);
+        var _filter = _curryr(_filter);
+        _go(users,
+            _filter(function (user) { return user.age >= 30; }),
+            _map(_get('name')),
+            console.log);
+
+        _go(users,
+            _filter(user => user.age < 30),
+            _map(_get('age')),
+            console.log);
+
+
+        // -4. 화살표 함수 간단히
+        var a = function (user) { return user.age >= 30; }
+        var a = user => user.age >= 30;
+
+        //6. _each의 외부 다형성 높이기
+        // -1. _each에 null넣어도 에러 안나게
+        // var _length = _get('length');
+        // function _each(list, iter) {
+        //     for (var i = 0, len = _length(list); i < len; i++) {
+        //         iter(list[i]);
+        //     }
+        //     return list;
+        // }
+        _each(null, console.log);
+        console.log(_filter(null, function (v) { return v; }));
+        // -2. _keys 만들기
+        function _is_object(obj) {
+            return typeof obj == 'object' && !!obj;
+        }
+        function _keys(obj) {
+            return _is_object(obj) ? Object.keys(obj) : [];
+        }
+        // -3. _keys에서도 _is_object인지 검사하여 null 에러 안나게
+        console.log(_keys({ name: 'ID', age: 33 }));
+        console.log(_keys([1, 2, 3, 4]));
+        console.log(_keys(3));
+        console.log(_keys(null));
+        // -4. _each 외부 다형성 높이기
+        // function _each(list, iter) {
+        //     var keys = _keys(list); //배열이 들어와도 뽑히고 아니어도 뽑히게 됨
+        //     for (var i = 0, len = keys.length; i < len; i++) {
+        //         iter(list[keys[i]]);
+        //     }
+        // }
+    </script>
+
+</body>
+
+</html>
